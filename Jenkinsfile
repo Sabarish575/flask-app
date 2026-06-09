@@ -63,9 +63,9 @@ stages {
         steps {
 
             sh '''
-            docker tag flask-demo:v1 madasrushi0804/flask-demo:v1
+            docker tag flask-demo:v1 sabarish500/flask-demo:v1
 
-            docker push madasrushi0804/flask-demo:v1
+            docker push sabarish500/flask-demo:v1
             '''
         }
     }
