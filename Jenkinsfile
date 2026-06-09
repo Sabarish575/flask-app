@@ -1,53 +1,92 @@
 pipeline {
 
-    agent any
+agent any
 
-    stages {
+stages {
 
-        stage('Build') {
-
-            steps {
-
-                echo 'Building Application'
-
-                sh 'python3 --version'
-            }
+    stage('Build') {
+        steps {
+            echo 'Building Application'
+            sh 'python3 --version'
         }
+    }
 
-        stage('Install Dependencies') {
-
-            steps {
-
-                sh 'pip3 install -r requirements.txt'
-            }
+    stage('Install Dependencies') {
+        steps {
+            sh '''
+                python3 -m venv venv
+                . venv/bin/activate
+                pip install -r requirements.txt
+            '''
         }
+    }
 
-        stage('Test') {
+    stage('Test') {
+        steps {
+            echo 'Running Tests'
+            sh '''
+                . venv/bin/activate
+                pytest --html=report.html
+            '''
+        }
+    }
 
-            steps {
+    stage('Docker Build') {
+        steps {
+            sh '''
+            docker build -t flask-demo:v1 .
+            '''
+        }
+    }
 
-                echo 'Running Tests'
+    stage('Docker Login') {
 
-                sh 'pytest'
+        steps {
+
+            withCredentials([
+                usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )
+            ]) {
+
+                sh '''
+                echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                '''
             }
         }
     }
 
-    post {
+    stage('Push Image') {
 
-        success {
+        steps {
 
-            echo 'Build Successful'
-        }
+            sh '''
+            docker tag flask-demo:v1 madasrushi0804/flask-demo:v1
 
-        failure {
-
-            echo 'Build Failed'
-        }
-
-        always {
-
-            echo 'Pipeline Finished'
+            docker push madasrushi0804/flask-demo:v1
+            '''
         }
     }
+
+}
+
+post {
+
+    success {
+        echo 'Build Successful'
+    }
+
+    failure {
+        echo 'Build Failed'
+    }
+
+    always {
+        archiveArtifacts artifacts: 'report.html'
+        echo 'Pipeline Finished'
+    }
+
+}
+
 }
