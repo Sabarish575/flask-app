@@ -1,20 +1,13 @@
-FROM jenkins/jenkins:lts
+FROM python:3.11-slim
 
-USER root
+WORKDIR /app
 
-RUN apt-get update && \
-   apt-get install -y \
-   python3 \
-   python3-pip \
-   git \
-   curl
+COPY requirements.txt .
 
-# Docker CLI
-RUN curl -fsSL https://get.docker.com | sh
+RUN pip install --no-cache-dir -r requirements.txt
 
-# kubectl
-RUN curl -LO "https://dl.k8s.io/release/v1.34.1/bin/linux/amd64/kubectl" && \
-   chmod +x kubectl && \
-   mv kubectl /usr/local/bin/
+COPY . .
 
-USER jenkins
+EXPOSE 5000
+
+CMD ["python","app.py"]
